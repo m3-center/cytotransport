@@ -1,0 +1,179 @@
+\usepackage{fancyhdr}
+\usepackage[%
+    a5paper,
+%    papersize={5.5in,8.5in},
+    %twoside
+    margin=0.75in,
+    top=0.75in,
+    bottom=0.75in,
+    ]{geometry}
+
+\usepackage{xcolor}
+\usepackage{wrapfig}
+\usepackage{graphicx}
+
+% Specialize colors
+\definecolor{vegetarianColor}{RGB}{44, 158, 38}
+\definecolor{glutenFreeColor}{RGB}{195, 124, 47}
+\definecolor{drinkColor}{RGB}{48, 94, 135}
+\definecolor{dessertColor}{RGB}{194, 102, 169}
+\definecolor{meatColor}{RGB}{164, 10, 10}
+\definecolor{fishColor}{RGB}{209, 187, 63}
+\definecolor{HBRS}{RGB}{0, 157, 224}
+
+% Change header line
+\let\oldheadrule\headrule
+\renewcommand{\headrule}{\color{HBRS}\oldheadrule}
+\renewcommand{\headrulewidth}{2pt}%
+
+% Headers to the page - dish type, additional dish type, serves how many
+\newcommand{\dishType}[1]{\rhead{#1}}
+\newcommand{\dishOther}[1]{\lhead{#1}}
+\newcommand{\serves}[2][Serves]{\chead{#1 #2}}
+
+% Dish types
+\newcommand{\vegetarian}{ {\large\color{vegetarianColor}\textbf{Vegetarian}} }
+\newcommand{\vegan}{ {\large\color{vegetarianColor}\textbf{Vegan}} }
+\newcommand{\glutenFree}{ {\large\color{glutenFreeColor}\textbf{Gluten Free}} }
+\newcommand{\drink}{      {\large\color{drinkColor}\textbf{Drink}} }
+\newcommand{\dessert}{    {\large\color{dessertColor}\textbf{Dessert}} }
+\newcommand{\maindish}{       {\large\color{meatColor}\textbf{Main Dish}} }
+\newcommand{\meat}{       {\large\color{meatColor}\textbf{Meat}} }
+\newcommand{\fish}{       {\large\color{fishColor}\textbf{Fish}} }
+
+\newcommand{\makeahead}{  {\large\color{makeaheadcolor}\textbf{M}} }
+
+%% Preparation and cook times:
+\newcommand{\prepTime}[2][Prep time]{\lfoot{#1: #2}}
+\newcommand{\cookTime}[2][Cook time]{\rfoot{#1: #2}}
+
+
+\usepackage{xparse}    % for new commands
+\makeatletter          % needed for commands below
+
+% From Donald Arseneau. Add after the wrapping text. Whew!
+\def\wrapfill{%
+    \par
+    \ifx\parshape\WF@fudgeparshape
+        \nobreak
+        \ifnum\c@WF@wrappedlines>\@ne
+            \advance\c@WF@wrappedlines\m@ne
+            \vskip\c@WF@wrappedlines\baselineskip
+            \global\c@WF@wrappedlines\z@
+        \fi
+        \allowbreak
+        \WF@finale
+    \fi
+}
+
+% Used for the headnote and in \showit
+% If the text is small it is placed on one line;
+% otherwise it is put into a raggedright paragraph.
+\long\def\writeOneLine#1{%
+    \sbox\@tempboxa{#1}%
+    \ifdim \wd\@tempboxa <0.75\linewidth
+        \begingroup
+            \itshape
+            #1\par
+        \endgroup
+    \else
+       \parbox{0.95\linewidth}{\raggedright\itshape#1}% %% size of comment text
+       \par
+    \fi
+}
+
+\newif\if@mainmatter \@mainmattertrue
+
+%% Borrowed from book.cls
+\newcommand\frontmatter{%
+    \cleardoublepage
+    \@mainmatterfalse
+    \pagenumbering{roman}}
+    
+\newcommand\mainmatter{%
+    \cleardoublepage
+    \@mainmattertrue
+    \pagenumbering{arabic}}
+
+\makeatother
+
+% Thanks to alephzero for the excellent start:
+% #1 [optional headnote]; #2 Title of recipe; #3 [Initial instructions]
+\newcounter{stepnum}
+
+\NewDocumentCommand{\recipe}{o m o}{%
+    \setcounter{stepnum}{0}    % Reset the recipe's steps counter 
+    \newpage
+    \thispagestyle{fancy}
+    \lhead{}%
+    \chead{}%
+    \rhead{}%
+    \lfoot{}%
+    \rfoot{}%
+    \section{#2}%
+    \IfNoValueF{#1}{\begin{center}\writeOneLine{#1}\end{center}}
+    \IfNoValueF{#3}{\noindent\emph{#3}\par\medskip}
+}
+
+%%\newcommand{\temp}[1]{#1°C}
+
+% include a graphic
+\newcommand{\showpic}[3]{%
+    \begin{center}
+        \bigskip
+        \includegraphics[width=#1\textwidth]{#2}
+        \par
+        \medskip
+        \writeOneLine{#3}    % figure caption
+        \par
+    \end{center}%
+}
+
+\def\ucit#1{\uppercase{#1}}
+\begingroup
+    \lccode`~=`\^^M
+    \lowercase{%
+\endgroup%% Ingredient first, then measure; empty measure and/or unit = " . "
+    %% *=column break; amount<space>ingredient
+    \NewDocumentCommand{\ing}{u{ } u{ } u{~}}{% %% basically the same as: \def\ing#1 #2~{% requires xparse
+        \noindent
+        \if#1#2% Is a heading, a non-ingredient, in the ingredients block
+            \emph{#3}~ % A heading
+        \else % Amounts containing spaces <1 teaspoon> have to use '~' <1~teaspoon>
+            \textbf{\ucit#3, }#1\if.#2\else\ #2\fi~ %
+        \fi
+    }%
+}%
+
+% New command for two columns containing the steps and the corresponding ingredients
+% First the ingredients, and then the methodology
+\NewDocumentEnvironment{step}{}{%
+    \parindent0pt
+    \leftskip0pt
+    \begin{minipage}{\textwidth}
+        \begin{wrapfigure}{r}{0pt}
+            \kern-0.5em
+            \vrule width 1pt\enskip
+            \begin{minipage}{0.5\textwidth}
+                \leftskip=1.5em
+                \parindent=-1.5em
+                \parskip=0.25em
+                \obeylines
+                \everypar={\ing}
+}{%
+    \wrapfill
+    \end{minipage}
+    \medskip
+}
+
+\NewDocumentCommand{\method}{}{%
+    \end{minipage}
+    \end{wrapfigure}
+    \rightskip0pt plus 2em
+    \parskip0.25em
+    \everypar={\llap{\stepcounter{stepnum}\hbox to 1.5em{\thestepnum.\hfill}}}
+}
+
+
+\pagestyle{plain}
+\setlength{\intextsep}{0pt}
